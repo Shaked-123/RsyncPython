@@ -10,6 +10,7 @@ class ErrorCodeEnum(Enum):
     COPY_DIRECTORY_FAILURE = (5, "Cannot copy directory")
     UNKNOWN_ERROR = (auto(), "undefined error")
 
+
 class RsyncException(Exception):
     def __init__(self, src_path, dst_path, error_enum, external_error=""):
         super().__init__()
