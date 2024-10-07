@@ -134,7 +134,7 @@ def test_copy_directory_contents(setup_and_teardown):
         ]
     )
 def test_get_updated_destination_path(setup_and_teardown, src_path, dst_path, condition_lambda, lambda_param, expected):
-    assert expected == RsyncCommand.get_updated_destination_path(src_path, dst_path, condition_lambda(lambda_param))
+    assert expected == RsyncCommand.get_full_destination_path(src_path, dst_path, condition_lambda(lambda_param))
 
 @pytest.mark.parametrize(
         "src_path, dst_path, expected_error_code",

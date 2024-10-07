@@ -21,8 +21,8 @@ class RsyncCommand(object):
 
     @staticmethod
     def copy_file_attributes(src_file, dst_file):
-        shutil.copymode(src_file, dst_file)
-        shutil.copystat(src_file, dst_file)
+        shutil.copymode(src_file, dst_file)  # copy file mode (permissions)
+        shutil.copystat(src_file, dst_file)  # copy stat information (like last access time, last modification time...)
 
     @staticmethod
     def is_copy_needed(src_file, dst_file):
@@ -43,6 +43,13 @@ class RsyncCommand(object):
         return True
 
     def copy_file(self, src_file, dst_file):
+        """
+        Copy src_file to dst_file in chunks (including the src_file attributes)
+        The user will get the transfer progress status
+        :param src_file: str
+        :param dst_file: str
+        :return: nothing
+        """
         try:
             if RsyncCommand.is_copy_needed(src_file, dst_file):
                 with open(src_file, "rb") as file_to_copy:
@@ -63,6 +70,13 @@ class RsyncCommand(object):
             raise RsyncException(src_file, dst_file, ErrorCodeEnum.COPY_FILE_FAILURE, file_copy_error)
 
     def copy_directory_contents(self, src_path, dst_path):
+        """
+        Copy src_path to dst_path recursively (including directories and files)
+        Create dst_path if it isn't exist
+        :param src_path: str
+        :param dst_path: str
+        :return: nothing
+        """
         try:
             os.makedirs(dst_path, exist_ok=True)
             for item in os.listdir(src_path):
@@ -94,16 +108,36 @@ class RsyncCommand(object):
         return total_size
 
     @staticmethod
-    def get_updated_destination_path(src_path, dst_path, condition):
+    def get_full_destination_path(src_path, dst_path, condition):
+        """
+        This function returns the destination path base on a condition -
+        it chooses between the original destination or a destination with sub-dir/filename
+        :param src_path: str
+        :param dst_path: str
+        :param condition: bool
+        :return: the full destination path (str)
+        """
         basename = os.path.basename(src_path)
         return dst_path if condition else os.path.join(dst_path, basename)
 
-    def execute_copy_command(self, copy_command, total_size, update_dst_condition):
-        updated_dst_path = self.get_updated_destination_path(self.src_path, self.dst_path, update_dst_condition)
+    def execute_copy_command(self, copy_command, total_size, full_dst_condition):
+        """
+        This function is generic a generic copy function.
+        It creates needed parameters and call the copy_command function
+        :param copy_command: copy function (which gets two parameters - src and dst)
+        :param total_size: total size of data to copy
+        :param full_dst_condition: condition for getting the full destination path
+        :return: nothing
+        """
+        updated_dst_path = self.get_full_destination_path(self.src_path, self.dst_path, full_dst_condition)
         self.global_progress_tracker.add_track_progress(self.worker_number, self.src_path, self.dst_path, total_size)
         copy_command(self.src_path, updated_dst_path)
 
     def run(self):
+        """
+        This function runs the rsync command - which copy files/folders from src to dst
+        :return: nothing
+        """
         if os.path.exists(self.src_path):
             if os.path.isfile(self.src_path):
                 # Copy file
