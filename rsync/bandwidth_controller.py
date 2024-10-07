@@ -12,6 +12,13 @@ class BandwidthController(object):
         self._start_time = time.time()
 
     def update_bytes_copied(self, bytes_copied):
+        """
+        This function update the remain_chunk_size to a new size base of the amount of bytes that were already copied
+        In order to control bandwidth - if all bytes per second were copied -
+        the function sleeps for the rest of the second
+        :param bytes_copied: int
+        :return: nothing
+        """
         if bytes_copied < self._remained_chunk_size:
             self._remained_chunk_size -= bytes_copied
         else:

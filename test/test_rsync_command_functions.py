@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import os
 import random
 import shutil
-from rsync.rsync_command_functions import copy_file, copy_directory_contents, rsync_command, get_updated_destination_path
+from rsync.rsync_command_functions import RsyncCommand
 import filecmp
 import pytest
 from rsync.exceptions import ErrorCodeEnum, RsyncException
@@ -51,10 +51,12 @@ def setup_and_teardown():
     if os.path.exists(dst_dir):
         shutil.rmtree(dst_dir)
 
+
 def create_random_file_with_random_size(file_path):
     size = random.randint(5 * 1024, 30 * 1024)  # Size between 5KB to 30KB
     with open(file_path, 'wb') as new_file:
         new_file.write(os.urandom(size))
+
 
 def are_sub_systems_equal(dir1, dir2):
     comparison = filecmp.dircmp(dir1, dir2)
@@ -67,8 +69,10 @@ def are_sub_systems_equal(dir1, dir2):
             return False
     return True
 
+
 def are_files_equal(file1, file2):
     return filecmp.cmp(file1, file2, shallow=False)
+
 
 def test_copy_file(setup_and_teardown):
     track_progress = MagicMock()
@@ -78,7 +82,9 @@ def test_copy_file(setup_and_teardown):
 
     src_file = os.path.join(SRC_DIRECTORY_FOR_TESTS, FILES_IN_ROOT_DIR[0])
     dst_file = os.path.join(DST_DIRECTORY_FOR_TESTS, FILES_IN_ROOT_DIR[0])
-    copy_file(src_file, dst_file, track_progress, bandwidth_controller)
+
+    rsync_command_obj = RsyncCommand(src_file, dst_file, track_progress)
+    rsync_command_obj.copy_file(src_file, dst_file)
 
     assert are_files_equal(src_file, dst_file)
 
@@ -89,7 +95,8 @@ def test_copy_directory_contents(setup_and_teardown):
     bandwidth_controller.get_chunk_size.return_value = 10
     bandwidth_controller.update_bytes_copied = MagicMock()
 
-    copy_directory_contents(SRC_DIRECTORY_FOR_TESTS, DST_DIRECTORY_FOR_TESTS, track_progress, bandwidth_controller)
+    rsync_command_obj = RsyncCommand(SRC_DIRECTORY_FOR_TESTS, DST_DIRECTORY_FOR_TESTS, track_progress)
+    rsync_command_obj.copy_directory_contents(SRC_DIRECTORY_FOR_TESTS, DST_DIRECTORY_FOR_TESTS)
     assert are_sub_systems_equal(SRC_DIRECTORY_FOR_TESTS, DST_DIRECTORY_FOR_TESTS)
 
 
@@ -127,7 +134,7 @@ def test_copy_directory_contents(setup_and_teardown):
         ]
     )
 def test_get_updated_destination_path(setup_and_teardown, src_path, dst_path, condition_lambda, lambda_param, expected):
-    assert expected == get_updated_destination_path(src_path, dst_path, condition_lambda(lambda_param))
+    assert expected == RsyncCommand.get_updated_destination_path(src_path, dst_path, condition_lambda(lambda_param))
 
 @pytest.mark.parametrize(
         "src_path, dst_path, expected_error_code",
@@ -140,7 +147,9 @@ def test_get_updated_destination_path(setup_and_teardown, src_path, dst_path, co
 def test_rsync_command_exceptions(setup_and_teardown, src_path, dst_path, expected_error_code):
     with pytest.raises(RsyncException) as exception_obj:
         tracker = MagicMock()
-        rsync_command(src_path, dst_path, tracker, ONE_WORKER)
+
+        rsync_command_obj = RsyncCommand(src_path, dst_path, tracker)
+        rsync_command_obj.run()
 
     assert exception_obj.value.error_code == expected_error_code
 
@@ -177,8 +186,7 @@ def test_rsync_command_exceptions(setup_and_teardown, src_path, dst_path, expect
 def test_rsync_command(setup_and_teardown, src_path, dst_path, comparison_function, expected_destination):
     assert not os.path.exists(expected_destination)
     tracker = MagicMock()
-    rsync_command(src_path, dst_path, tracker, ONE_WORKER, 10 * 1024)
+    rsync_command_obj = RsyncCommand(src_path, dst_path, tracker)
+    rsync_command_obj.run()
     assert os.path.exists(expected_destination)
     assert comparison_function(src_path, expected_destination)
-
-

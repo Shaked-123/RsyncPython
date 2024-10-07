@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from rsync.rsync_command_functions import rsync_command, DEFAULT_BANDWIDTH_KB
+from rsync.rsync_command_functions import RsyncCommand, DEFAULT_BANDWIDTH_KB
 from rsync.track_progress import TrackMultipleCopyProgress
 
 
@@ -12,7 +12,8 @@ def rsync_parallel(src_dst_pairs, bandwidth=DEFAULT_BANDWIDTH_KB):
         tracker = TrackMultipleCopyProgress()
 
         for worker_number, (src, dst) in enumerate(src_dst_pairs):
-            future = executor.submit(rsync_command, src, dst, tracker, worker_number, bandwidth)
+            rsync_command_obj = RsyncCommand(src, dst, tracker, worker_number, bandwidth)
+            future = executor.submit(rsync_command_obj.run)
             futures.append(future)
 
         for future in futures:
