@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from rsync.rsync_command_functions import rsync_command, DEFAULT_BANDWIDTH_KB
 from rsync.track_progress import TrackMultipleCopyProgress
-import os
 
 
 DEFAULT_MAXIMUM_WORKERS = 10
@@ -18,11 +17,3 @@ def rsync_parallel(src_dst_pairs, bandwidth=DEFAULT_BANDWIDTH_KB):
 
         for future in futures:
             future.result()
-
-
-with open("testfile", 'wb') as f:
-    f.write(os.urandom(10 * 1024))
-with open("testfile2", 'wb') as f:
-    f.write(os.urandom(10 * 1024))
-
-rsync_parallel([("testfile", "myfile"), ("testfile2", "myfile2")])
