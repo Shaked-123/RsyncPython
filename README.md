@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-# RsyncPython
-=======
 # RsyncPython
 
 Rsync is a command for copying files/folders from source path to destination path.
@@ -27,4 +24,3 @@ By default the program will treat the destination as file, so if you want the de
 If source is a directiry - the destination should be a directory.
 If the destination directory ends with '/' - the content of the source directory will be copied to the destination dirctory.
 If the destination directory doesn't end with '/' - the source directory and all its contents will be copyied to the destination directory.  
->>>>>>> Stashed changes
